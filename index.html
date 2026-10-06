@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GEONET PRO — Геодезийн сүлжээний бүрэн боловсруулалт</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f6fb;color:#172033;font-family:Arial,"Segoe UI",sans-serif}
+header{background:linear-gradient(135deg,#0b3b91,#1769d1);color:white;padding:22px}
+header h1{margin:0 0 5px;font-size:25px}header p{margin:0;font-size:13px}
+.wrap{max-width:1500px;margin:18px auto;padding:0 14px}.card{background:#fff;border:1px solid #d7e0ea;border-radius:15px;padding:17px;margin-bottom:15px;box-shadow:0 3px 12px #10182812}
+h2{margin:0 0 13px;font-size:20px}h3{font-size:16px;margin:16px 0 9px}label{display:block;font-size:12px;font-weight:700;margin:8px 0 4px;color:#344054}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+input,select{width:100%;height:40px;border:1px solid #c7d3e1;border-radius:8px;padding:0 10px;font-size:14px;background:white}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}button{border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer}.primary{background:#2864df;color:white}.secondary{background:#e7edf5}.danger{background:#dc2626;color:white}
+.info,.formula,.status{border-radius:9px;padding:11px 13px;font-size:12px;line-height:1.65;margin:10px 0}.info{background:#fff9e8;border:1px solid #f1c45d}.formula{background:#f7f9fc;border-left:4px solid #2864df}.status{background:#f7f9fc}
+.table-wrap{overflow:auto;border:1px solid #d5dde8;border-radius:10px}table{width:100%;border-collapse:collapse;min-width:720px}th,td{border-bottom:1px solid #dfe5ec;padding:8px;text-align:center;font-size:13px}th{background:#f7f9fc;font-size:12px;white-space:nowrap}td input{height:35px;min-width:65px}.auto{background:#f2f6ff;color:#175cd3;font-weight:bold}
+.measure-input{background:#fff!important;color:#101828!important;font-weight:500;cursor:text}
+.measure-input:focus{border:2px solid #2864df;outline:none;background:#f8fbff!important}
+.distance-input{min-width:90px}.height-input{min-width:90px}
+.metricgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{border:1px solid #d7e0ea;border-radius:10px;padding:11px}.metric small{display:block;color:#667085}.metric strong{display:block;font-size:18px;margin-top:4px}.sub{font-size:12px;margin-top:4px}.ok{color:#079455}.bad{color:#d92d20}.warn{color:#dc6803}
+#canvas{display:block;width:100%;height:650px;border:1px solid #d7dee8;border-radius:10px;background:white}.tools{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px}.tools button{padding:8px 10px;background:#eef2f6}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}.metricgrid{grid-template-columns:1fr 1fr}}@media(max-width:600px){.metricgrid{grid-template-columns:1fr}}
+@media print{header,.no-print{display:none!important}.card{box-shadow:none}#canvas{height:550px}}
+</style>
+</head>
+<body>
+<header>
+<h1>GEONET PRO — Геодезийн сүлжээний бүрэн боловсруулалт</h1>
+<p>Хэмжилт → өнцгийн хаалт → өнцгийн засвар → азимут → координатын өсөлт → шугаман хаалт → Bowditch → X,Y,H → зураг</p>
+</header>
+<div class="wrap">
+
+<div class="card">
+<h2>① Сүлжээний тохиргоо</h2>
+<div class="grid2">
+<div><label>Сүлжээний төрөл</label><select id="type"><option value="closed">Битүү сэлгэц / Traverse</option><option value="open">Задгай сэлгэц / Traverse</option></select></div>
+<div><label>Цэгийн тоо n</label><input id="n" type="number" min="3" max="100" value="5"></div>
+</div>
+<div class="grid3">
+<div><label>Эхний X / Northing (м)</label><input id="x0" class="measure-input" inputmode="decimal" placeholder="5000.000"></div>
+<div><label>Эхний Y / Easting (м)</label><input id="y0" class="measure-input" inputmode="decimal" placeholder="3000.000"></div>
+<div><label>Эхний H / Өндөр (м)</label><input id="h0" class="measure-input" inputmode="decimal" placeholder="100.000"></div>
+</div>
+<div id="openEndBox" class="grid3" style="display:none;margin-top:10px">
+<div><label>Төгсгөлийн X / Northing (м)</label><input id="xe" class="measure-input" inputmode="decimal" placeholder="5450.000"></div>
+<div><label>Төгсгөлийн Y / Easting (м)</label><input id="ye" class="measure-input" inputmode="decimal" placeholder="3250.000"></div>
+<div><label>Төгсгөлийн H / Өндөр (м)</label><input id="he" class="measure-input" inputmode="decimal" placeholder="105.000"></div>
+</div>
+<div id="openEndInfo" class="info" style="display:none"><b>Задгай сэлгэц:</b> эхлэл ба төгсгөлийн цэгийн X, Y, H мэдэгдэж байна. Төгсгөлийн цэгийн координаттай харьцуулж <b>fX, fY, fH</b>-г олно. Хэрэв төгсгөлийн азимут мөн мэдэгдэж байвал нэмэлтээр өнцгийн/азимутын хаалтыг шалгаж болно.</div>
+<div class="grid2">
+<div><label>Эхний талын азимут α₁ DMS</label><div class="grid3"><input id="azd" class="measure-input" inputmode="decimal" placeholder="35"><input id="azm" class="measure-input" inputmode="decimal" placeholder="20"><input id="azs" class="measure-input" inputmode="decimal" placeholder="00.00"></div></div>
+<div><label>Дотоод өнцөг хэмжсэн чиглэл</label><select id="side"><option value="right">Баруун өнцөг (Right)</option><option value="left">Зүүн өнцөг (Left)</option></select></div>
+</div>
+<div id="endAzBox" class="grid2" style="display:none;margin-top:10px">
+<div><label>Төгсгөлийн талын мэдэгдэж буй азимут α<sub>end</sub> (сонголттой)</label><div class="grid3"><input id="eazd" class="measure-input" inputmode="decimal" placeholder="—"><input id="eazm" class="measure-input" inputmode="decimal" placeholder="—"><input id="eazs" class="measure-input" inputmode="decimal" placeholder="—"></div></div>
+<div class="info" style="margin:0"><b>Анхаарах:</b> төгсгөлийн азимут байхгүй бол задгай сэлгэцы өнцгийн хаалтыг (fβ) битүү сэлгэц шиг (n−2)180°-оор бодохгүй.</div>
+</div>
+</div>
+<div class="grid2">
+<div><label>Өнцгийн зөвшөөрөгдөх алдаа (″)</label><input id="tol" type="number" step=".1" value="30"></div>
+<div><label>Харьцангуй хаалтын шаардлага 1:N</label><input id="req" type="number" value="10000"></div>
+</div>
+<div class="btns no-print"><button class="primary" onclick="build()">Сүлжээ үүсгэх</button><button class="secondary" onclick="example()">Жишээ</button><button class="danger" onclick="clearAll()">Цэвэрлэх</button></div>
+</div>
+
+<div class="card">
+<h2>② Хэмжсэн дотоод өнцөг, зай, өндөржилт</h2>
+<div class="info"><b>Бүх хэмжилтийн утгыг гараар оруулна.</b> Дотоод өнцгийг 3 тусдаа нүдэнд: <b>108 | 20 | 15.00</b> = 108°20′15.00″. <b>D ба ΔH нь цэг (.) болон хасах тэмдэг (-)-ийг гараас шууд оруулна.</b> Жишээ: <b>125.235</b>, <b>-0.825</b>.</div>
+<div class="table-wrap"><table><thead><tr><th>Цэг</th><th>Хэмжсэн өнцөг °</th><th>′</th><th>″</th><th>D (м)</th><th>ΔH (м)</th></tr></thead><tbody id="meas"></tbody></table></div>
+<div class="btns no-print" style="margin-top:14px">
+  <button class="primary" id="calcBtn" onclick="calc()">▶ Тооцоолол эхлүүлэх</button>
+  <button class="secondary" onclick="fillMissingZero()">Хоосон утгыг 0 болгох</button>
+</div>
+<div id="inputStatus" class="status">① Сүлжээ үүсгэсний дараа хэмжилтийн бүх утгыг гараар оруулаад <b>“Тооцоолол эхлүүлэх”</b> товчийг дарна.</div>
+</div>
+
+<div class="card">
+<h2>③ Өнцгийн хаалтын алдаа → өнцгийн засвар</h2>
+<div class="formula">
+<span id="angleFormula">Битүү сэлгэц: Σβ<sub>0</sub> = (n−2)×180°<br>fβ = Σβ<sub>хэмжсэн</sub> − Σβ<sub>0</sub><br>Хэрэв |fβ| ≤ fβ<sub>зөвшөөрөгдөх</sub>: <b>vβ = −fβ/n</b><br>β<sub>зас</sub> = β<sub>хэмж</sub> + vβ</span>
+</div>
+<div class="metricgrid">
+<div class="metric"><small>Σ хэмжсэн</small><strong id="sumB">—</strong></div>
+<div class="metric"><small>Σ онолын</small><strong id="theory">—</strong></div>
+<div class="metric"><small>fβ</small><strong id="fb">—</strong></div>
+<div class="metric"><small>vβ</small><strong id="vb">—</strong></div>
+</div>
+<div id="decision" class="status">Хэмжилт оруулна уу.</div>
+<div class="table-wrap"><table><thead><tr><th>Цэг</th><th>Хэмжсэн өнцөг</th><th>Засвар</th><th><b>Засварласан өнцөг</b></th></tr></thead><tbody id="angletab"></tbody></table></div>
+</div>
+
+<div class="card">
+<h2>④ Азимутын тооцоо</h2>
+<div class="formula"><b>Эхний тал:</b> α₁ = P₁→P₂-ийн өгөгдсөн азимут.<br><b>Баруун өнцөг:</b> α<sub>i+1</sub> = α<sub>i</sub> + 180° − β<sub>i+1</sub><br><b>Зүүн өнцөг:</b> α<sub>i+1</sub> = α<sub>i</sub> − 180° + β<sub>i+1</sub><br><b>Чухал:</b> α₁-ийг бодохдоо β₁ ашиглахгүй; α₂-оос эхлэн тухайн оройн β ашиглана. Үр дүнг 0°–360° болгон нормчилно.</div>
+<div class="table-wrap"><table><thead><tr><th>Тал</th><th>Азимут</th></tr></thead><tbody id="aztab"></tbody></table></div>
+</div>
+
+<div class="card">
+<h2>⑤ Координатын өсөлт</h2>
+<div class="formula"><b>ΔX = D cos α</b><br><b>ΔY = D sin α</b><br>X = Northing, Y = Easting.</div>
+<div class="table-wrap"><table><thead><tr><th>Тал</th><th>D (м)</th><th>Азимут</th><th>ΔX (м)</th><th>ΔY (м)</th><th>ΔH (м)</th></tr></thead><tbody id="inctab"></tbody></table></div>
+<p><b>fX = ΣΔX = <span id="fx">—</span> м</b> &nbsp;&nbsp; <b>fY = ΣΔY = <span id="fy">—</span> м</b> &nbsp;&nbsp; <b>fH = ΣΔH = <span id="fh">—</span> м</b></p>
+</div>
+
+<div class="card">
+<h2>⑥ Шугаман хаалтын алдаа ба харьцангуй хаалт</h2>
+<div class="formula"><span id="closureFormula"><b>f<sub>s</sub> = √(fX² + fY²)</b><br><b>M = ΣD / f<sub>s</sub></b><br>Харьцангуй хаалтын алдаа = <b>1 : M</b></span></div>
+<div class="metricgrid">
+<div class="metric"><small>ΣD</small><strong id="sd">—</strong></div><div class="metric"><small>fX</small><strong id="fx2">—</strong></div>
+<div class="metric"><small>fY</small><strong id="fy2">—</strong></div><div class="metric"><small>f<sub>s</sub></small><strong id="fs">—</strong></div>
+</div>
+<div class="metric" style="margin-top:10px"><small>Харьцангуй хаалтын алдаа</small><strong id="rel">—</strong><div id="relstat" class="sub">—</div></div>
+</div>
+
+<div class="card" id="openClosureCard" style="display:none">
+<h2>⑦ Задгай сэлгэцы төгсгөлийн хаалтын шалгалт</h2>
+<div class="formula">
+X<sub>n</sub><sup>calc</sup> = X<sub>1</sub> + ΣΔX<sub>i</sub>; &nbsp; Y<sub>n</sub><sup>calc</sup> = Y<sub>1</sub> + ΣΔY<sub>i</sub>; &nbsp; H<sub>n</sub><sup>calc</sup> = H<sub>1</sub> + ΣΔH<sub>i</sub><br>
+fX = X<sub>n</sub><sup>calc</sup> − X<sub>n</sub><sup>known</sup><br>
+fY = Y<sub>n</sub><sup>calc</sup> − Y<sub>n</sub><sup>known</sup><br>
+fH = H<sub>n</sub><sup>calc</sup> − H<sub>n</sub><sup>known</sup>
+</div>
+<div class="metricgrid"><div class="metric"><small>X төгсгөл тооцоолсон</small><strong id="xcalcEnd">—</strong></div><div class="metric"><small>Y төгсгөл тооцоолсон</small><strong id="ycalcEnd">—</strong></div><div class="metric"><small>H төгсгөл тооцоолсон</small><strong id="hcalcEnd">—</strong></div><div class="metric"><small>fH</small><strong id="fhOpen">—</strong></div></div>
+<div id="openClosureStatus" class="status">Задгай сэлгэцы төгсгөлийн координатыг оруулна уу.</div>
+</div>
+
+<div class="card">
+<h2>⑧ Bowditch-ийн аргаар координатын өсөлтийг засах</h2>
+<div class="formula">
+v<sub>ΔXᵢ</sub> = −fX × Dᵢ/ΣD<br>
+v<sub>ΔYᵢ</sub> = −fY × Dᵢ/ΣD<br>
+v<sub>ΔHᵢ</sub> = −fH × Dᵢ/ΣD<br>
+ΔX<sub>i</sub><sup>зас</sup> = ΔX<sub>i</sub> + v<sub>ΔXᵢ</sub><br>
+ΔY<sub>i</sub><sup>зас</sup> = ΔY<sub>i</sub> + v<sub>ΔYᵢ</sub><br>
+ΔH<sub>i</sub><sup>зас</sup> = ΔH<sub>i</sub> + v<sub>ΔHᵢ</sub>
+</div>
+<div class="table-wrap"><table><thead><tr><th>Тал</th><th>vX (м)</th><th>vY (м)</th><th>vH (м)</th><th>Засварласан ΔX</th><th>Засварласан ΔY</th><th>Засварласан ΔH</th></tr></thead><tbody id="bow"></tbody></table></div>
+</div>
+
+<div class="card">
+<h2>⑨ Эцсийн координат X, Y, H</h2>
+<div class="formula">X<sub>i+1</sub>=X<sub>i</sub>+ΔX<sub>зас</sub>; &nbsp; Y<sub>i+1</sub>=Y<sub>i</sub>+ΔY<sub>зас</sub>; &nbsp; H<sub>i+1</sub>=H<sub>i</sub>+ΔH<sub>зас</sub></div>
+<div class="table-wrap"><table><thead><tr><th>Цэг</th><th>X (м)</th><th>Y (м)</th><th>H (м)</th></tr></thead><tbody id="coord"></tbody></table></div>
+</div>
+
+<div class="card">
+<h2>⑩ Эцсийн сүлжээний шугамын хүснэгт</h2>
+<div class="table-wrap"><table><thead><tr><th>Шугам</th><th>Азимут</th><th>D m</th><th>ΔX m</th><th>ΔY m</th><th>ΔH m</th></tr></thead><tbody id="final"></tbody></table></div>
+</div>
+
+<div class="card">
+<h2>⑪ Сүлжээний зураг</h2>
+<div class="tools no-print"><button onclick="fit()">⟳ Багтаах</button><button onclick="zoom(1.25)">＋</button><button onclick="zoom(.8)">－</button><button onclick="azToggle()">α Азимут</button><button onclick="coToggle()">X,Y,H</button><button onclick="csv()">CSV</button><button onclick="print()">Хэвлэх / PDF</button></div>
+<canvas id="canvas"></canvas>
+</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let N=5,A=[],D=[],H=[],AC=[],AZ=[],L=[],C=[],mz=1,showA=true,showC=true;
+
+function dms(d,m,s){if(d===''||m===''||s==='')return NaN;return +d+(+m)/60+(+s)/3600}
+function norm(a){return((a%360)+360)%360}
+function fd(a){a=norm(a);let d=Math.floor(a),q=(a-d)*60,m=Math.floor(q),s=(q-m)*60;if(s>=59.995){s=0;m++}if(m>=60){m=0;d=(d+1)%360}return `${d}° ${String(m).padStart(2,'0')}′ ${s.toFixed(2).padStart(5,'0')}″`}
+function fsd(a){return(a<0?'−':'')+fd(Math.abs(a))}
+function num(v,n=4){return Number.isFinite(v)?v.toFixed(n):'—'}
+
+function toggleOpenUI(){
+ const isOpen=$('type').value==='open';
+ $('openEndBox').style.display=isOpen?'grid':'none';
+ $('openEndInfo').style.display=isOpen?'block':'none';
+ $('endAzBox').style.display=isOpen?'grid':'none';
+ $('openClosureCard').style.display=isOpen?'block':'none';
+ $('angleFormula').innerHTML=isOpen?
+   'Задгай сэлгэц: төгсгөлийн азимут мэдэгдэж байвал fα = α<sub>end</sub><sup>calc</sup> − α<sub>end</sub><sup>known</sup> гэж азимутын хаалтыг шалгана. Төгсгөлийн азимут мэдэгдэхгүй бол (n−2)×180°-ын өнцгийн хаалт хэрэглэж болохгүй.' :
+   'Битүү сэлгэц: Σβ<sub>0</sub> = (n−2)×180°<br>fβ = Σβ<sub>хэмжсэн</sub> − Σβ<sub>0</sub><br>Хэрэв |fβ| ≤ fβ<sub>зөвшөөрөгдөх</sub>: <b>vβ = −fβ/n</b><br>β<sub>зас</sub> = β<sub>хэмж</sub> + vβ';
+ $('closureFormula').innerHTML=isOpen?'<b>f<sub>s</sub> = √(fX² + fY²)</b><br><b>M = ΣD / f<sub>s</sub></b><br>Энд fX, fY нь тооцоолсон төгсгөлийн координат ба мэдэгдэж буй төгсгөлийн координатын зөрүү.':'<b>f<sub>s</sub> = √(fX² + fY²)</b><br><b>M = ΣD / f<sub>s</sub></b><br>Харьцангуй хаалтын алдаа = <b>1 : M</b>';
+}
+function build(){
+ N=Math.max(3,Math.min(100,+$('n').value||5));$('n').value=N;
+ toggleOpenUI();
+ let b=$('meas');b.innerHTML='';
+ let isOpen=$('type').value==='open';
+ let rows=isOpen?N-1:N;
+ for(let i=1;i<=rows;i++){
+   let point=isOpen?`P${i}→P${i+1}`:`P${i}`;
+   let angleLabel=isOpen?(i<N-1?`β${i+1}`:'—'):`β${i}`;
+   let disabled=isOpen&&i===N-1?'disabled':'';
+   b.insertAdjacentHTML('beforeend',`<tr><td><b>${point}</b></td>
+    <td><input id="ad${i}" class="measure-input" inputmode="decimal" autocomplete="off" placeholder="${angleLabel}" ${disabled}></td>
+    <td><input id="am${i}" class="measure-input" inputmode="decimal" autocomplete="off" placeholder="′" ${disabled}></td>
+    <td><input id="as${i}" class="measure-input" inputmode="decimal" autocomplete="off" placeholder="″" ${disabled}></td>
+    <td><input id="dd${i}" class="measure-input distance-input" inputmode="decimal" autocomplete="off" placeholder="зай, м"></td>
+    <td><input id="hh${i}" class="measure-input height-input" inputmode="decimal" autocomplete="off" placeholder="ΔH, м"></td></tr>`);
+ }
+ clearOut();
+ attachMeasurementEvents();
+}
+
+function clearOut(){
+ ['angletab','aztab','inctab','bow','coord','final'].forEach(id=>$(id).innerHTML='');
+ ['sumB','theory','fb','vb','fx','fy','fh','sd','fx2','fy2','fs','rel'].forEach(id=>$(id).textContent='—');
+ $('decision').textContent='Хэмжилт оруулна уу.';$('relstat').textContent='—';A=[];D=[];H=[];AC=[];AZ=[];L=[];C=[];draw()
+}
+function toNum(v){
+  if(v===undefined || v===null) return NaN;
+  v=String(v).trim().replace(/,/g,'.').replace(/\s+/g,'');
+  if(v==='') return NaN;
+  return Number(v);
+}
+function read(){
+ A=[];D=[];H=[];let miss=[],isOpen=$('type').value==='open';
+ let rows=isOpen?N-1:N;
+ for(let i=1;i<=rows;i++){
+  let a;
+  if(isOpen && i===N-1) a=0;
+  else a=dms(toNum($(`ad${i}`).value),toNum($(`am${i}`).value),toNum($(`as${i}`).value));
+  let d=toNum($(`dd${i}`).value), h=toNum($(`hh${i}`).value);
+  if(!Number.isFinite(a) && !(isOpen&&i===N-1))miss.push(`β${i+1}`);
+  if(!Number.isFinite(d))miss.push(`P${i}→P${i+1} D`);
+  if(!Number.isFinite(h))miss.push(`P${i}→P${i+1} ΔH`);
+  A.push(a);D.push(d);H.push(h);
+ }
+ return miss
+}
+
+function calcCore(){
+ let miss=read(), x0=toNum($('x0').value), y0=toNum($('y0').value), h0=toNum($('h0').value), az0=dms(toNum($('azd').value),toNum($('azm').value),toNum($('azs').value)), isOpen=$('type').value==='open';
+ if(!Number.isFinite(x0)||!Number.isFinite(y0)||!Number.isFinite(h0)||!Number.isFinite(az0))miss.push('эхний X,Y,H,азимут');
+ if(isOpen && (!Number.isFinite(toNum($('xe').value))||!Number.isFinite(toNum($('ye').value))||!Number.isFinite(toNum($('he').value))))miss.push('төгсгөлийн X,Y,H');
+ if(miss.length){$('decision').innerHTML=`<span class="bad"><b>✕ Дутуу эсвэл буруу өгөгдөл:</b> ${miss.join(', ')}</span>`;$('inputStatus').innerHTML='<span class="bad"><b>Дутуу утга байна.</b> Шаардлагатай бүх өгөгдлийг гараар оруулна уу.</span>';return;}
+ $('inputStatus').innerHTML='<span class="ok">✓ Хэмжилтийн өгөгдөл уншигдлаа. Тооцоолол явагдаж байна…</span>';
+ let sb=A.reduce((a,b)=>a+b,0), th=(N-2)*180, fb=sb-th, tol=toNum($('tol').value)||30;
+ let ok=Math.abs(fb*3600)<=tol, vb=-fb/N, AC=A.map(v=>v+vb);
+ $('sumB').textContent=isOpen?'—':fd(sb);$('theory').textContent=isOpen?'—':fd(th);$('fb').textContent=isOpen?'—':fsd(fb);$('vb').textContent=isOpen?'—':fsd(vb);
+ let ab=$('angletab');ab.innerHTML='';
+ if(isOpen){
+   for(let i=0;i<N-1;i++)ab.insertAdjacentHTML('beforeend',`<tr><td>β${i+2}</td><td>${i<N-2?fd(A[i]):'—'}</td><td>—</td><td>—</td></tr>`);
+ }else{for(let i=0;i<N;i++)ab.insertAdjacentHTML('beforeend',`<tr><td>P${i+1}</td><td>${fd(A[i])}</td><td>${fsd(vb)}</td><td><b>${fd(AC[i])}</b></td></tr>`);}
+ let angleForCalc=A, endAzKnown=NaN;
+ if(isOpen){let e1=toNum($('eazd').value),e2=toNum($('eazm').value),e3=toNum($('eazs').value);if(Number.isFinite(e1)&&Number.isFinite(e2)&&Number.isFinite(e3))endAzKnown=dms(e1,e2,e3);}else if(ok)angleForCalc=AC;
+ $('decision').innerHTML=isOpen?(Number.isFinite(endAzKnown)?'<span class="ok">Задгай сэлгэц: эхний азимут ба төгсгөлийн мэдэгдэж буй азимут ашиглан азимутын хаалтыг шалгана.</span>':'<span class="warn">Задгай сэлгэц: төгсгөлийн азимут өгөөгүй тул (n−2)×180°-ын өнцгийн хаалт хийхгүй. Төгсгөлийн X,Y,H-тэй координатын хаалт шалгана.</span>'):(ok?`<span class="ok">✓ |fβ|=${Math.abs(fb*3600).toFixed(2)}″ ≤ ${tol}″. Засварласан өнцгийг ашиглав.</span>`:`<span class="bad">⚠ |fβ|=${Math.abs(fb*3600).toFixed(2)}″ > ${tol}″. Засвар хүснэгтэд харагдана, азимутад хэмжсэн өнцгийг ашиглав.</span>`);
+ AZ=[];AZ[0]=norm(az0);
+/* α1=P1→P2 is given. Closed traverse: α2 uses β2,
+   α3 uses β3, ...; β1 is not used to derive α2.
+   Open traverse rows start at β2, so A[i-1] is used. */
+for(let i=1;i<(isOpen?N-1:N);i++){
+  let beta = isOpen ? angleForCalc[i-1] : angleForCalc[i];
+  AZ[i]=$('side').value==='right'
+    ? norm(AZ[i-1]+180-beta)
+    : norm(AZ[i-1]-180+beta);
+}
+ let at=$('aztab');at.innerHTML='';AZ.forEach((az,i)=>at.insertAdjacentHTML('beforeend',`<tr><td>P${i+1}→P${i+2}</td><td><b>${fd(az)}</b></td></tr>`));
+ if(isOpen&&Number.isFinite(endAzKnown)){let fAz=norm(AZ[AZ.length-1])-norm(endAzKnown);if(fAz>180)fAz-=360;if(fAz<=-180)fAz+=360;$('decision').innerHTML+=`<div class="sub">Төгсгөлийн азимутын хаалтын алдаа: <b>${fsd(fAz)}</b> = <b>${(fAz*3600).toFixed(2)}″</b>.</div>`;}
+ L=[];let fx0=0,fy0=0,fh0=0,sd=0;
+ for(let i=0;i<(isOpen?N-1:N);i++){let r=AZ[i]*Math.PI/180,dx=D[i]*Math.cos(r),dy=D[i]*Math.sin(r);L.push({from:i+1,to:i+2,D:D[i],az:AZ[i],dx,dy,dh:H[i]});fx0+=dx;fy0+=dy;fh0+=H[i];sd+=D[i];}
+ let xEndCalc=x0+fx0,yEndCalc=y0+fy0,hEndCalc=h0+fh0,fX=fx0,fY=fy0,fH=fh0;
+ if(isOpen){let xe=toNum($('xe').value),ye=toNum($('ye').value),he=toNum($('he').value);fX=xEndCalc-xe;fY=yEndCalc-ye;fH=hEndCalc-he;$('xcalcEnd').textContent=num(xEndCalc,4)+' m';$('ycalcEnd').textContent=num(yEndCalc,4)+' m';$('hcalcEnd').textContent=num(hEndCalc,4)+' m';$('fhOpen').textContent=num(fH,5)+' m';$('openClosureStatus').innerHTML=`<b>Мэдэгдэж буй төгсгөл:</b> X=${num(xe,4)} м, Y=${num(ye,4)} м, H=${num(he,4)} м<br><b>Хаалтын алдаа:</b> fX=${num(fX,5)} м, fY=${num(fY,5)} м, fH=${num(fH,5)} м`;}
+ $('fx').textContent=num(fX,5);$('fy').textContent=num(fY,5);$('fh').textContent=num(fH,5);
+ let it=$('inctab');it.innerHTML='';L.forEach(l=>it.insertAdjacentHTML('beforeend',`<tr><td>P${l.from}→P${l.to}</td><td>${num(l.D,3)}</td><td>${fd(l.az)}</td><td>${num(l.dx,5)}</td><td>${num(l.dy,5)}</td><td>${num(l.dh,5)}</td></tr>`));
+ let fs=Math.hypot(fX,fY),M=fs?sd/fs:Infinity,req=toNum($('req').value)||10000;$('sd').textContent=num(sd,3)+' m';$('fx2').textContent=num(fX,5)+' m';$('fy2').textContent=num(fY,5)+' m';$('fs').textContent=num(fs,5)+' m';$('rel').textContent=M===Infinity?'1 : ∞':'1 : '+Math.round(M).toLocaleString();$('relstat').textContent=M>=req?'✓ Шаардлага хангасан':'✕ Шаардлага хангахгүй';$('relstat').className='sub '+(M>=req?'ok':'bad');
+ let bw=$('bow');bw.innerHTML='';L.forEach(l=>{let vx=sd?-fX*l.D/sd:0,vy=sd?-fY*l.D/sd:0,vh=sd?-fH*l.D/sd:0;l.vx=vx;l.vy=vy;l.vh=vh;l.cdx=l.dx+vx;l.cdy=l.dy+vy;l.cdh=l.dh+vh;bw.insertAdjacentHTML('beforeend',`<tr><td>P${l.from}→P${l.to}</td><td>${num(vx,5)}</td><td>${num(vy,5)}</td><td>${num(vh,5)}</td><td><b>${num(l.cdx,5)}</b></td><td><b>${num(l.cdy,5)}</b></td><td><b>${num(l.cdh,5)}</b></td></tr>`)});
+ C=[{name:'P1',x:x0,y:y0,h:h0}];let x=x0,y=y0,h=h0;for(let i=0;i<L.length;i++){x+=L[i].cdx;y+=L[i].cdy;h+=L[i].cdh;C.push({name:'P'+(i+2),x,y,h});}
+ let ct=$('coord');ct.innerHTML='';C.forEach(p=>ct.insertAdjacentHTML('beforeend',`<tr><td><b>${p.name}</b></td><td>${num(p.x,4)}</td><td>${num(p.y,4)}</td><td>${num(p.h,4)}</td></tr>`));let ft=$('final');ft.innerHTML='';L.forEach(l=>ft.insertAdjacentHTML('beforeend',`<tr><td>P${l.from}→P${l.to}</td><td>${fd(l.az)}</td><td>${num(l.D,3)}</td><td>${num(l.cdx,5)}</td><td>${num(l.cdy,5)}</td><td>${num(l.cdh,5)}</td></tr>`));
+ $('inputStatus').innerHTML='<span class="ok">✓ Тооцоолол амжилттай дууслаа. Өнцөг/азимут → ΔX,ΔY,ΔH → төгсгөлийн хаалт → Bowditch → эцсийн координат шинэчлэгдлээ.</span>';fit();
+}
+
+function calc(){
+  try{
+    calcCore();
+  }catch(err){
+    console.error(err);
+    $('inputStatus').innerHTML='<span class="bad"><b>✕ Тооцооллын алдаа:</b> '+(err && err.message ? err.message : err)+'</span>';
+    $('decision').innerHTML='<span class="bad">Програмын тооцооллын алдаа гарлаа. Өгөгдлөө шалгана уу.</span>';
+  }
+}
+function fillMissingZero(){
+  for(let i=1;i<=N;i++){
+    ['ad','am','as','dd','hh'].forEach(k=>{
+      let el=$(`${k}${i}`);
+      if(el && el.value.trim()==='') el.value='0';
+    });
+  }
+  $('inputStatus').innerHTML='<span class="warn">⚠ Хоосон хэмжилтийн нүднүүдэд 0 орууллаа. Бодит хэмжилтийн утга байвал 0-ийг заавал өөрийн хэмжилтийн утгаар солино уу.</span>';
+}
+function attachMeasurementEvents(){
+  document.querySelectorAll('.measure-input').forEach(el=>{
+    el.addEventListener('keydown',e=>{
+      if(e.key==='Enter'){
+        e.preventDefault();
+        calc();
+      }
+    });
+    el.addEventListener('input',()=>{
+      $('inputStatus').innerHTML='Хэмжилтийн утгуудыг гараар оруулж байна…';
+    });
+  });
+}
+function example(){
+ $('n').value=5;$('x0').value=5000;$('y0').value=3000;$('h0').value=100;$('azd').value=35;$('azm').value=20;$('azs').value=0;$('side').value='right';$('tol').value=30;$('req').value=10000;build();
+ [[90,0,0,125.235,1.235],[107,35,0,98.452,-.825],[91,15,0,115.620,.452],[87,45,0,103.815,-.617],[73,25,0,120.330,-.245]].forEach((r,i)=>{$(`ad${i+1}`).value=r[0];$(`am${i+1}`).value=r[1];$(`as${i+1}`).value=r[2];$(`dd${i+1}`).value=r[3];$(`hh${i+1}`).value=r[4]});calc()
+ toggleOpenUI();
+}
+function clearAll(){$('x0').value='';$('y0').value='';$('h0').value='';$('azd').value='';$('azm').value='';$('azs').value='';build()}
+
+function draw(){
+ let c=$('canvas'),r=c.getBoundingClientRect(),d=devicePixelRatio||1;c.width=r.width*d;c.height=r.height*d;let g=c.getContext('2d');g.setTransform(d,0,0,d,0,0);let W=r.width,H=r.height;g.clearRect(0,0,W,H);
+ if(C.length<2){g.fillStyle='#98a2b3';g.font='14px Arial';g.textAlign='center';g.fillText('Тооцоолсны дараа сүлжээний зураг энд гарна',W/2,H/2);north(g,W,H);return}
+ let minx=Math.min(...C.map(p=>p.x)),maxx=Math.max(...C.map(p=>p.x)),miny=Math.min(...C.map(p=>p.y)),maxy=Math.max(...C.map(p=>p.y)),sx=Math.max(maxx-minx,1),sy=Math.max(maxy-miny,1),sc=Math.min((W-120)/sx,(H-120)/sy)*mz,cx=(minx+maxx)/2,cy=(miny+maxy)/2,px=x=>W/2+(x-cx)*sc,py=y=>H/2-(y-cy)*sc;
+ g.strokeStyle='#e8edf2';g.lineWidth=1;let st=nice(Math.max(sx,sy)/7);for(let x=Math.floor(minx/st)*st;x<=maxx+st;x+=st){g.beginPath();g.moveTo(px(x),0);g.lineTo(px(x),H);g.stroke()}for(let y=Math.floor(miny/st)*st;y<=maxy+st;y+=st){g.beginPath();g.moveTo(0,py(y));g.lineTo(W,py(y));g.stroke()}
+ g.strokeStyle='#344054';g.lineWidth=2.2;g.beginPath();C.forEach((p,i)=>i?g.lineTo(px(p.x),py(p.y)):g.moveTo(px(p.x),py(p.y)));if($('type').value==='closed')g.lineTo(px(C[0].x),py(C[0].y));g.stroke();
+ C.forEach(p=>{g.fillStyle='#2864df';g.beginPath();g.arc(px(p.x),py(p.y),5.5,0,7);g.fill();g.fillStyle='#172033';g.font='bold 12px Arial';g.textAlign='left';g.fillText(p.name,px(p.x)+9,py(p.y)-8);if(showC){g.fillStyle='#667085';g.font='10px Arial';g.fillText(`X ${p.x.toFixed(2)} Y ${p.y.toFixed(2)} H ${p.h.toFixed(2)}`,px(p.x)+9,py(p.y)+8)}});
+ if(showA){g.fillStyle='#175cd3';g.font='bold 11px Arial';g.textAlign='center';L.forEach((l,i)=>{let a=C[i],b=C[i+1]||C[i];if(!b)return;g.fillText(fd(l.az),(px(a.x)+px(b.x))/2,(py(a.y)+py(b.y))/2-8)})}north(g,W,H)
+}
+function nice(v){let p=10**Math.floor(Math.log10(v||1)),q=v/p;return(q<1.5?1:q<3?2:q<7?5:10)*p}
+function north(g,W,H){let x=W-35,y=43;g.strokeStyle='#172033';g.lineWidth=2;g.beginPath();g.moveTo(x,y+28);g.lineTo(x,y);g.stroke();g.fillStyle='#172033';g.beginPath();g.moveTo(x,y-2);g.lineTo(x-6,y+9);g.lineTo(x+6,y+9);g.fill();g.font='bold 13px Arial';g.textAlign='center';g.fillText('N',x,y-10)}
+function fit(){mz=1;draw()}function zoom(v){mz*=v;draw()}function azToggle(){showA=!showA;draw()}function coToggle(){showC=!showC;draw()}
+function csv(){
+ if(!L.length)return alert('Эхлээд тооцоолно уу.');
+ let s='Шугам,Азимут,D_m,Засварласан_DeltaX_m,Засварласан_DeltaY_m,Засварласан_DeltaH_m\\n';L.forEach(l=>s+=`P${l.from}->P${l.to},${fd(l.az)},${l.D},${l.cdx},${l.cdy},${l.cdh}\\n`);s+='\\nЦэг,X_m,Y_m,H_m\\n';C.forEach(p=>s+=`${p.name},${p.x},${p.y},${p.h}\\n`);let b=new Blob(['\\ufeff'+s],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='GEONET_Bowditch_results.csv';a.click()
+}
+window.addEventListener('resize',draw);$('n').addEventListener('change',build);$('type').addEventListener('change',()=>build());toggleOpenUI();build()
+</script>
+</body>
+</html>
